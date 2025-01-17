@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model DAO {
+  id             String  @id @default(cuid())
+  walletAddress  String
+  title          String
+  description    String
+  fundTicker     String?
+  twitterHandle  String?
+  telegramHandle String?
+  telegramGroup  String?
+  poc            String?
+  poster         String?
+
+  treasuryAddress String? @unique
+  daoCoinAddress  String? @unique
+
+  fundingStarts DateTime?
+  fundingEnds   DateTime?
+
+  tradingStartsAt DateTime?
+  tradingEndsAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  founder User   @relation(fields: [walletAddress], references: [walletAddress])
+}
+
+model User {
+  id            String       @id @default(cuid())
+  walletAddress String       @unique
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  daos          DAO[]
+  InviteCode    InviteCode[] // ONLY ADMIN CAN CREATE INVITE CODES
+  role          Role         @default(USER)
+}
+
+model InviteCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  userId    String?  @unique // IF USER IS NULL, THEN IT IS NOT USED
+  expiresAt DateTime
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  USER
+}
