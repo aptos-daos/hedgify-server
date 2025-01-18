@@ -28,9 +28,34 @@ model DAO {
   tradingStartsAt DateTime?
   tradingEndsAt   DateTime?
 
+  comments Comment[]
+
   createdAt DateTime @default(now())
 
-  founder User   @relation(fields: [walletAddress], references: [walletAddress])
+  founder User @relation(fields: [walletAddress], references: [walletAddress])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  commentId String
+  createdAt DateTime @default(now())
+  Comment   Comment  @relation(fields: [commentId], references: [id])
+}
+
+model Comment {
+  id      String @id @default(cuid())
+  comment String
+  name    String
+  userId  String // TWITTER ID
+  image   String // User Image
+
+  daoId String
+
+  likes     Like[]
+  createdAt DateTime @default(now())
+
+  DAO DAO? @relation(fields: [daoId], references: [id])
 }
 
 model User {

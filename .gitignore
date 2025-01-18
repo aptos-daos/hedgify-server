@@ -176,3 +176,6 @@ dist
 
 # Prisma
 prisma/migrations
+
+# Key File
+keyfile.json
