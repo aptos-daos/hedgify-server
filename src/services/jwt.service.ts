@@ -27,11 +27,13 @@ export class JwtService {
       return;
     }
 
-    const obj = {
+    const obj: JwtPayload = {
       id: user.id,
       walletAddress: user.walletAddress,
       role: user.role
     }
+    
+    // @ts-ignore
     const token = jwt.sign(obj, this.secret, { expiresIn: JWT_EXPIRES_IN });
     return token;
   }

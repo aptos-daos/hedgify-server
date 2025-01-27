@@ -35,14 +35,24 @@ const dateSchema = z
 const daoSchema = z
   .object({
     id: z.string().cuid().optional(),
+    slug: z.string().min(3).max(60, "Slug max word limit is 40"),
     walletAddress: z.string(),
-    title: z.string().min(3).max(50, "Title max word limit is 50"),
+    title: z.string().min(3).max(60, "Title max word limit is 60"),
     description: z
       .string()
       .min(1, "Bio is required")
-      .max(500, "Bio must be less than 500 characters"),
+      .max(280, "Bio must be less than 280 characters"),
     treasuryAddress: z.string().optional(),
     daoCoinAddress: z.string().optional(),
+    indexFund: z.number(),
+    poster: z.string().url(),
+
+    fundTicker: z.string().optional(),
+    userXHandle: z.string(),
+    daoXHandle: z.string(),
+    telegramHandle: z.string(),
+    telegramGroup: z.string(),
+    website: z.string().url().optional(),
 
     fundingStarts: dateSchema.optional().default(new Date()),
     fundingEnds: dateSchema.optional(),

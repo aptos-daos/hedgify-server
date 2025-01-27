@@ -10,25 +10,28 @@ datasource db {
 model DAO {
   id             String  @id @default(cuid())
   walletAddress  String
-  title          String
-  description    String
-  fundTicker     String?
-  twitterHandle  String?
-  telegramHandle String?
+  title          String  @db.VarChar(60)
+  slug           String  @unique
+  description    String  @db.VarChar(280)
+  fundTicker     String? @db.VarChar(10)
+  userXHandle    String
+  daoXHandle     String?
+  telegramHandle String
   telegramGroup  String?
-  poc            String?
-  poster         String?
+  website        String?
+  poster         String
+  indexFund      Int // OPTIONS: 1000 5000 10K 50K 100K
 
   treasuryAddress String? @unique
   daoCoinAddress  String? @unique
 
-  fundingStarts DateTime?
-  fundingEnds   DateTime?
+  fundingStarts DateTime? // Funding ends in 7 days and after 10 days automatically starts trading
 
-  tradingStartsAt DateTime?
+  tradingStartsAt DateTime? // TRADING PERIOD: 30d 90d 120d 150d 180d 270d; trading date can be change if funding is done
   tradingEndsAt   DateTime?
 
-  comments Comment[]
+  comments  Comment[]
+  whitelist Whitelist[]
 
   createdAt DateTime @default(now())
 
@@ -75,6 +78,15 @@ model InviteCode {
   expiresAt DateTime
   user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+}
+
+model Whitelist {
+  id        String  @id @default(cuid())
+  walletId  String
+  maxAmount Int
+  
+  dAOId     String?
+  DAO       DAO?    @relation(fields: [dAOId], references: [id])
 }
 
 enum Role {

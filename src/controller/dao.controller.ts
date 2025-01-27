@@ -16,7 +16,9 @@ export class DAOController {
   }
   async createDAO(req: Request, res: Response) {
     try {
-      const validInvite = await this.inviteService.validateInvite(req.body.inviteCode);
+      const validInvite = await this.inviteService.validateInvite(
+        req.body.inviteCode
+      );
 
       if (!validInvite) {
         res.status(400).json({ error: "Invalid invite code" });
@@ -79,10 +81,14 @@ export class DAOController {
       const { id } = req.params;
       const dao = await prisma.dAO.findUnique({
         where: { id },
+        include: {
+          comments: true,
+          whitelist: true,
+        },
       });
 
       if (dao) {
-        res.status(200).json({data: dao});
+        res.status(200).json({ data: dao });
       } else {
         res.status(404).json({ error: "DAO not found" });
       }
@@ -91,5 +97,27 @@ export class DAOController {
     }
   }
 
-  
+  async checkSlug(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const dao = await prisma.dAO.findUnique({
+        where: { slug: id },
+      });
+      if (dao) {
+        res
+          .status(400)
+          .json({
+            success: true,
+            data: { available: false },
+            message: "Slug is not Available",
+          });
+      } else {
+        res
+          .status(200)
+          .json({ data: { available: true }, message: "Slug Available" });
+      }
+    } catch (error) {
+      res.status(500).json({ error });
+    }
+  }
 }

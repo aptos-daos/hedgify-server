@@ -22,8 +22,12 @@ router.put("/:id", adminAuth, daoController.updateDAO);
 // Get all DAOs
 router.get("", daoController.getAllDAOs);
 
+// Get Slug Availablility
+router.get("/slug/:id", daoController.checkSlug);
+
 // Get single DAO
 router.get("/:id", daoController.getSingleDAO);
+
 
 
 export default router;

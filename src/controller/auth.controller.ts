@@ -1,18 +1,15 @@
 import { Request, Response } from "express";
 import { JwtService, AptosVerificationService } from "../services";
-import { InviteService } from "../services/invite.service";
 import { UserService } from "../services/user.service";
 
 export class AuthController {
   private jwtService: JwtService;
   private aptosVerificationService: AptosVerificationService;
-  private inviteService: InviteService;
   private userService: UserService;
 
   constructor() {
     this.jwtService = new JwtService();
     this.aptosVerificationService = new AptosVerificationService();
-    this.inviteService = new InviteService();
     this.userService = new UserService();
 
     this.signin = this.signin.bind(this);
@@ -21,31 +18,31 @@ export class AuthController {
 
   async signin(req: Request, res: Response) {
     try {
-      const { account, message, signature } = req.body;
+      const { address, message, signature, publicKey } = req.body;
 
-      if (!account || !message || !signature) {
+      if (!address || !message || !signature || !publicKey) {
         res.status(400).json({
-          message: "Account, Message and Signature are required to login.",
+          message: "Address, Message, Public Key and Signature are required to login.",
         });
         return;
       }
 
-      const resp = await this.aptosVerificationService.verifySignature(
+      const isValid = await this.aptosVerificationService.verifySignature(
         message,
         signature,
-        account
+        publicKey,
       );
 
-      if (!resp) {
+      if (!isValid) {
         res.status(400).json({
           error: "Message verification failed.",
         });
         return;
       }
 
-      const user = await this.userService.createUser(account);
+      const user = await this.userService.createUser(address);
 
-      const token = await this.jwtService.sign(account);
+      const token = await this.jwtService.sign(address);
 
       res.status(200).json({
         message: "success",

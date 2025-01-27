@@ -13,8 +13,6 @@ const API_VERSION = "1";
 const URI = "https://arupbasak.xyz/";
 const RESOURCES = ["https://docs.moralis.io/"];
 
-const getHex = (str: string): string =>
-  str.startsWith("0x") ? str : `0x${str}`;
 const generateNonce = (): string => randomBytes(16).toString("base64");
 
 export const aptos = new Aptos();
@@ -69,29 +67,15 @@ export class AptosVerificationService {
     }
   }
 
-  public verifySignature(
+  public verifySignature = (
     message: string,
     signature: string,
-    publicKey: string
-  ): boolean {
-    try {
-      return true;
-      if (!message || !signature || !publicKey) {
-        throw new Error("Message, signature, and public key are required");
-      }
-      console.log(message, signature, publicKey);
-
-      const ed25519PublicKey = new Ed25519PublicKey(publicKey);
-      const ed25519Signature = new Ed25519Signature((signature));
-      const encodedMessage = new TextEncoder().encode(message);
-
-      return ed25519PublicKey.verifySignature({
-        message: encodedMessage,
-        signature: ed25519Signature,
-      });
-    } catch (error) {
-      console.error("Error in verifySignature:", error);
-      return false;
-    }
-  }
+    publicKey: string,
+  ): boolean => {
+    const verify = new Ed25519PublicKey(publicKey).verifySignature({
+      message: message,
+      signature: new Ed25519Signature(signature),
+    });
+    return verify;
+  };
 }

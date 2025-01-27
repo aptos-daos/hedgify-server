@@ -3,6 +3,7 @@ import { Role } from "@prisma/client";
 import { addDays } from "date-fns";
 import { generateInviteCode } from "../utils/invite-code";
 
+// TODO: USE REDIS TO HANDLE CACHE
 const DEFAULT_EXPIRY_DAYS = 90;
 
 export class InviteService {
@@ -55,6 +56,13 @@ export class InviteService {
     
     const invite = await prisma.inviteCode.findUnique({
       where: { code },
+      include: {
+        user: {
+          select: {
+            id: true,
+          },
+        },
+      }
     });
 
     if (!invite) {
@@ -65,6 +73,7 @@ export class InviteService {
       throw new Error("Invite code has expired");
     }
 
+    // TODO: VALIDATE INVITE
     return true;
   }
 }

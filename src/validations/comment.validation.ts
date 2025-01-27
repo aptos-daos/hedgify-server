@@ -14,4 +14,5 @@ export const commentSchemaResponse = commentSchema.extend({
 })
 
 export type Comment = z.infer<typeof commentSchema>;
+export type CommentResponse = z.infer<typeof commentSchemaResponse>;
 export { commentSchema };

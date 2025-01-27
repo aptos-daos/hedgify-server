@@ -11,8 +11,8 @@ router.use(validateResponse);
 router.get("/", adminAuth, inviteController.listInvite);
 
 router.post("/add", adminAuth, inviteController.insertInviteCode);
-// router.post("/:code", auth, inviteController.validateInvite);
+router.post("/:code", auth, inviteController.validateInvite);
 
-// router.delete("/:code", adminAuth, inviteController.removeInvite);
+router.delete("/:code", adminAuth, inviteController.removeInvite);
 
 export default router;

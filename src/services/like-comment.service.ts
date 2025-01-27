@@ -1,6 +1,6 @@
 import prisma from "../libs/prisma";
 import redis from "../libs/redis";
-import type { Comment } from "../validations/comment.validation";
+import  { CommentResponse, commentSchemaResponse, type Comment } from "../validations/comment.validation";
 
 const CACHE_TTL = process.env.CACHE_TTL || 3600;
 const LIKE_KEY_PREFIX = "like:";
@@ -36,7 +36,7 @@ export class CommentService {
     return newComment;
   }
 
-  async getCommentsByDao(daoId: string): Promise<Comment[]> {
+  async getCommentsByDao(daoId: string): Promise<CommentResponse[]> {
     const daoKey = `${DAO_COMMENTS_KEY_PREFIX}${daoId}`;
 
     // Try to get comment IDs from cache
@@ -61,12 +61,24 @@ export class CommentService {
     // If cache miss or incomplete, get from database
     const comments = await prisma.comment.findMany({
       where: { daoId },
+      include: {
+        _count: {
+          select: { likes: true },
+        },
+      },
     });
 
-    // Update cache
-    await Promise.all(comments.map((comment) => this.cacheComment(comment)));
+    const commentsWithLikeCount = comments.map((comment) => ({
+      ...comment,
+      likes: comment._count.likes,
+    }));
 
-    return comments;
+    // Update cache
+    await Promise.all(
+      commentsWithLikeCount.map((comment) => this.cacheComment(comment))
+    );
+
+    return commentSchemaResponse.array().parse(commentsWithLikeCount);
   }
 
   async getComment(id: string): Promise<Comment | null> {

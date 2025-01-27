@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { LikeService, CommentService } from "../services/like-comment.service";
 import { commentSchema } from "../validations/comment.validation";
-import { error } from "console";
 
 export class LikeCommentController {
   private likeService: LikeService;
@@ -44,10 +43,7 @@ export class LikeCommentController {
         },
       });
     } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      res.json({ error: "Failed to toggle like on comment" });
+      res.json({ error });
     }
   };
 

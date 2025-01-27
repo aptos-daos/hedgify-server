@@ -20,7 +20,7 @@ export class InviteController {
   async listInvite(req: Request, res: Response) {
     try {
       const invites = await prisma.inviteCode.findMany();
-      res.status(200).json(invites);
+      res.status(200).json({ data: invites });
     } catch (error) {
       console.error("Error listing invites:", error);
       res.status(500).json({ error: "Failed to list invites" });
@@ -47,9 +47,14 @@ export class InviteController {
       const { code } = req.params;
       const response = await this.inviteService.validateInvite(code);
       if (!response) {
-        res.status(400).json({ error: "Failed to validate invite" });
+        res.status(400).json({
+          error: "Failed to validate invite",
+          data: { verified: false },
+        });
       }
-      res.status(200).json({ message: "Token is Verified" });
+      res
+        .status(200)
+        .json({ message: "Token is Verified", data: { verified: true } });
     } catch (error) {
       res.status(500).json({ error });
     }
