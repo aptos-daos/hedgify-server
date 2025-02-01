@@ -65,7 +65,7 @@ export class InviteService {
       }
     });
 
-    if (!invite) {
+    if (!invite || invite.user) {
       throw new Error("Invalid invite code");
     }
 

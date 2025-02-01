@@ -7,11 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model DAO {
+model Dao {
   id             String  @id @default(cuid())
+  slug           String  @unique
   walletAddress  String
   title          String  @db.VarChar(60)
-  slug           String  @unique
   description    String  @db.VarChar(280)
   fundTicker     String? @db.VarChar(10)
   userXHandle    String
@@ -21,14 +21,14 @@ model DAO {
   website        String?
   poster         String
   indexFund      Int // OPTIONS: 1000 5000 10K 50K 100K
+  profits        Int // In Percentage: max 10
 
   treasuryAddress String? @unique
   daoCoinAddress  String? @unique
 
   fundingStarts DateTime? // Funding ends in 7 days and after 10 days automatically starts trading
 
-  tradingStartsAt DateTime? // TRADING PERIOD: 30d 90d 120d 150d 180d 270d; trading date can be change if funding is done
-  tradingEndsAt   DateTime?
+  tradingPeriod Int? // TRADING PERIOD: 30d 90d 120d 150d 180d 270d; trading date can be change if funding is done
 
   comments  Comment[]
   whitelist Whitelist[]
@@ -36,14 +36,19 @@ model DAO {
   createdAt DateTime @default(now())
 
   founder User @relation(fields: [walletAddress], references: [walletAddress])
+
+  @@index([slug, walletAddress])
 }
 
 model Like {
   id        String   @id @default(cuid())
   userId    String
   commentId String
+  daoId     String
   createdAt DateTime @default(now())
-  Comment   Comment  @relation(fields: [commentId], references: [id])
+  comment   Comment  @relation(fields: [commentId], references: [id])
+
+  @@index([userId, commentId, daoId])
 }
 
 model Comment {
@@ -58,7 +63,7 @@ model Comment {
   likes     Like[]
   createdAt DateTime @default(now())
 
-  DAO DAO? @relation(fields: [daoId], references: [id])
+  dao Dao? @relation(fields: [daoId], references: [id])
 }
 
 model User {
@@ -66,7 +71,7 @@ model User {
   walletAddress String       @unique
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-  daos          DAO[]
+  daos          Dao[]
   InviteCode    InviteCode[] // ONLY ADMIN CAN CREATE INVITE CODES
   role          Role         @default(USER)
 }
@@ -81,12 +86,14 @@ model InviteCode {
 }
 
 model Whitelist {
-  id        String  @id @default(cuid())
-  walletId  String
-  maxAmount Int
-  
-  dAOId     String?
-  DAO       DAO?    @relation(fields: [dAOId], references: [id])
+  id      String @id @default(cuid())
+  address String
+  amount  Int
+
+  daoId String?
+  Dao   Dao?    @relation(fields: [daoId], references: [id])
+
+  @@index([daoId])
 }
 
 enum Role {

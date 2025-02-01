@@ -7,7 +7,6 @@ const authController = new AuthController();
 
 router.use(validateResponse);
 
-// TODO - Add routes for auth
 router.post("/", authController.signin);
 router.post("/request-message", authController.requestMessage);
 

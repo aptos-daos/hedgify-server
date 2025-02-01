@@ -16,8 +16,8 @@ export class LikeCommentController {
    */
   toggleLikeComment = async (req: Request, res: Response) => {
     try {
-      const { id: daoId, commentId } = req.params;
-      const { userId } = req.body;
+      const { commentId } = req.params;
+      const { userId, daoId } = req.body;
 
       // Check if user has already liked the comment
       const hasLiked = await this.likeService.hasUserLiked(commentId, userId);
@@ -43,6 +43,7 @@ export class LikeCommentController {
         },
       });
     } catch (error) {
+      console.log(error)
       res.json({ error });
     }
   };
@@ -91,6 +92,7 @@ export class LikeCommentController {
         data: comments,
       });
     } catch (error) {
+      console.log(error);
       throw new Error("Failed to get comments");
     }
   };

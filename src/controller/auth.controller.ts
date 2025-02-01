@@ -49,6 +49,7 @@ export class AuthController {
         data: {
           token: token,
           walletAddress: user?.walletAddress,
+          role: user.role.toLocaleLowerCase(),
         },
       });
     } catch (error: any) {

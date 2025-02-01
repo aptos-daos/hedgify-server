@@ -1,6 +1,11 @@
 import prisma from "../libs/prisma";
 import redis from "../libs/redis";
-import  { CommentResponse, commentSchemaResponse, type Comment } from "../validations/comment.validation";
+import {
+  CommentResponse,
+  commentSchemaResponse,
+  type Comment,
+  type Like,
+} from "../validations/comment.validation";
 
 const CACHE_TTL = process.env.CACHE_TTL || 3600;
 const LIKE_KEY_PREFIX = "like:";
@@ -61,23 +66,19 @@ export class CommentService {
     // If cache miss or incomplete, get from database
     const comments = await prisma.comment.findMany({
       where: { daoId },
-      include: {
-        _count: {
-          select: { likes: true },
-        },
-      },
     });
 
-    const commentsWithLikeCount = comments.map((comment) => ({
-      ...comment,
-      likes: comment._count.likes,
-    }));
+    const commentsWithLikeCount = comments.map((comment) => {
+      const { ...commentWithoutCount } = comment;
+      return {
+        ...commentWithoutCount,
+      };
+    });
 
     // Update cache
     await Promise.all(
       commentsWithLikeCount.map((comment) => this.cacheComment(comment))
     );
-
     return commentSchemaResponse.array().parse(commentsWithLikeCount);
   }
 
@@ -105,121 +106,72 @@ export class CommentService {
 }
 
 export class LikeService {
-  async likeComment(commentId: string, userId: string): Promise<void> {
-    const likeKey = `${LIKE_KEY_PREFIX}${commentId}`;
-    const countKey = `${LIKE_COUNT_PREFIX}${commentId}`;
-
-    // Update Redis
-    await Promise.all([
-      redis.sadd(likeKey, userId),
-      redis.incr(countKey),
-      redis.expire(likeKey, CACHE_TTL),
-      redis.expire(countKey, CACHE_TTL),
-    ]);
-
-    // Update database
-    await this.updateDatabase(commentId, userId, true);
+  private async cacheLike(like: Like): Promise<void> {
+    const likeKey = `${LIKE_KEY_PREFIX}${like.commentId}:${like.userId}`;
+    const likeCountKey = `${LIKE_COUNT_PREFIX}${like.commentId}`;
+    
+    await redis.setex(likeKey, CACHE_TTL, JSON.stringify(like));
+    await redis.incr(likeCountKey);
+    await redis.expire(likeCountKey, CACHE_TTL);
   }
 
-  async unlikeComment(commentId: string, userId: string): Promise<void> {
-    const likeKey = `${LIKE_KEY_PREFIX}${commentId}`;
-    const countKey = `${LIKE_COUNT_PREFIX}${commentId}`;
-
-    // Update Redis
-    await Promise.all([
-      redis.srem(likeKey, userId),
-      redis.decr(countKey),
-      redis.expire(likeKey, CACHE_TTL),
-      redis.expire(countKey, CACHE_TTL),
-    ]);
-
-    // Update database
-    await this.updateDatabase(commentId, userId, false);
+  private async removeLikeFromCache(commentId: string, userId: string): Promise<void> {
+    const likeKey = `${LIKE_KEY_PREFIX}${commentId}:${userId}`;
+    const likeCountKey = `${LIKE_COUNT_PREFIX}${commentId}`;
+    
+    await redis.del(likeKey);
+    await redis.decr(likeCountKey);
   }
 
-  async getLikes(commentId: string): Promise<number> {
-    const countKey = `${LIKE_COUNT_PREFIX}${commentId}`;
-
-    // Try cache first
-    const cachedCount = await redis.get(countKey);
-    if (cachedCount !== null) {
-      return parseInt(cachedCount);
-    }
-
-    // If cache miss, get from database
-    const count = await prisma.like.count({
-      where: { commentId },
-    });
-
-    // Update cache
-    await redis.setex(countKey, CACHE_TTL, count.toString());
-
-    return count;
+  private async queueLikeOperation(like: Like, operation: 'add' | 'remove'): Promise<void> {
+    const queueKey = 'like:queue';
+    await redis.rpush(queueKey, JSON.stringify({ ...like, operation }));
   }
 
   async hasUserLiked(commentId: string, userId: string): Promise<boolean> {
-    const key = `${LIKE_KEY_PREFIX}${commentId}`;
-
-    const exists = await redis.sismember(key, userId);
-    if (exists !== null) {
-      return exists === 1;
-    }
-
-    // If cache miss, check database
-    const like = await prisma.like.findFirst({
-      where: {
-        AND: [{ commentId }, { userId }],
-      },
-    });
-
-    // Update cache if like exists
-    if (like) {
-      await redis.sadd(key, userId);
-      await redis.expire(key, CACHE_TTL);
-    }
-
-    return !!like;
+    const likeKey = `${LIKE_KEY_PREFIX}${commentId}:${userId}`;
+    const exists = await redis.exists(likeKey);
+    return exists === 1;
   }
 
-  async syncLikesToCache(commentId: string): Promise<void> {
-    const likes = await prisma.like.findMany({
-      where: { commentId },
+  async getLikes(commentId: string): Promise<number> {
+    const likeCountKey = `${LIKE_COUNT_PREFIX}${commentId}`;
+    const count = await redis.get(likeCountKey);
+    
+    if (count !== null) {
+      return parseInt(count, 10);
+    }
+
+    // If count not in cache, get from database and cache it
+    const dbCount = await prisma.like.count({
+      where: { commentId }
     });
 
-    const likeKey = `${LIKE_KEY_PREFIX}${commentId}`;
-    const countKey = `${LIKE_COUNT_PREFIX}${commentId}`;
-
-    if (likes.length > 0) {
-      // Update like set
-      await redis.del(likeKey);
-      await redis.sadd(likeKey, ...likes.map((like) => like.userId));
-
-      // Update count
-      await redis.setex(countKey, CACHE_TTL, likes.length.toString());
-
-      // Set expiration
-      await redis.expire(likeKey, CACHE_TTL);
-    }
+    await redis.setex(likeCountKey, CACHE_TTL, dbCount.toString());
+    return dbCount;
   }
 
-  private async updateDatabase(
-    commentId: string,
-    userId: string,
-    isLike: boolean
-  ): Promise<void> {
-    if (isLike) {
-      await prisma.like.create({
-        data: {
-          commentId,
-          userId,
-        },
-      });
-    } else {
-      await prisma.like.deleteMany({
-        where: {
-          AND: [{ commentId }, { userId }],
-        },
-      });
-    }
+  async likeComment(commentId: string, userId: string): Promise<void> {
+    const like: Like = {
+      id: crypto.randomUUID(),
+      commentId,
+      userId,
+      daoId: '', // You'll need to get this from the comment
+      createdAt: new Date()
+    };
+
+    // Update cache immediately
+    await this.cacheLike(like);
+    
+    // Queue database operation
+    await this.queueLikeOperation(like, 'add');
+  }
+
+  async unlikeComment(commentId: string, userId: string): Promise<void> {
+    // Update cache immediately
+    await this.removeLikeFromCache(commentId, userId);
+    
+    // Queue database operation
+    await this.queueLikeOperation({ commentId, userId } as Like, 'remove');
   }
 }

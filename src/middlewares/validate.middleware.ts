@@ -40,6 +40,12 @@ export const validateResponse = (
 
         // console.log(error);
         res.status(500);
+        if(error instanceof Error) {
+          return originalJson.call(this, {
+            success: false,
+            message: error.message,
+          });
+        }
         return originalJson.call(this, {
           success: false,
           message: error || "An unexpected error occurred",

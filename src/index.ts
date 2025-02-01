@@ -4,6 +4,7 @@ import helmet from "helmet";
 import bodyParser from "body-parser";
 import morgan from "morgan";
 import "dotenv/config";
+import "./libs/workers";
 
 import daoRoute from "./routes/dao.route";
 import authRoute from "./routes/auth.route";
@@ -14,10 +15,11 @@ const port = process.env.SERVER_PORT || 8080;
 
 const CLIENT_URL = process.env.CLIENT_URL || "*";
 
+
 // Middlewares
 app.use(
   cors({
-    origin: "*",
+    origin: CLIENT_URL,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   })
 );

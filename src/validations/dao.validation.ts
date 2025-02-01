@@ -12,7 +12,6 @@ export const getDefaultDates = (fundingStartDate: Date = new Date()) => {
   );
   return {
     fundingStarts: fundingStartDate,
-    fundingEnds: addDays(fundingStartDate, DEFAULT_FUNDING_DURATION),
     tradingStartsAt: tradingStart,
     tradingEndsAt: addDays(tradingStart, DEFAULT_TRADING_DURATION),
   };
@@ -32,47 +31,53 @@ const dateSchema = z
     return value;
   });
 
-const daoSchema = z
-  .object({
-    id: z.string().cuid().optional(),
-    slug: z.string().min(3).max(60, "Slug max word limit is 40"),
-    walletAddress: z.string(),
-    title: z.string().min(3).max(60, "Title max word limit is 60"),
-    description: z
-      .string()
-      .min(1, "Bio is required")
-      .max(280, "Bio must be less than 280 characters"),
-    treasuryAddress: z.string().optional(),
-    daoCoinAddress: z.string().optional(),
-    indexFund: z.number(),
-    poster: z.string().url(),
+const daoSchema = z.object({
+  id: z.string().cuid().optional(),
+  slug: z.string().min(3).max(60, "Slug max word limit is 40"),
+  walletAddress: z.string(),
+  title: z.string().min(3).max(60, "Title max word limit is 60"),
+  description: z
+    .string()
+    .min(1, "Bio is required")
+    .max(280, "Bio must be less than 280 characters"),
+  treasuryAddress: z.string().optional().nullable(), // TODO: UPDATE WHILE DEPLOYING
+  daoCoinAddress: z.string().optional().nullable(), // TODO: UPDATE WHILE DEPLOYING
+  indexFund: z
+    .union([
+      z
+        .string()
+        .regex(/^\d+$/, "Must be a valid number")
+        .transform((val) => Number(val)),
+      z.number(),
+    ])
+    .refine((val) => val > 0, "Index fund must be greater than 0"),
+  profits: z.number().min(0).max(10, "Profits must be between 0 and 10"),
 
-    fundTicker: z.string().optional(),
-    userXHandle: z.string(),
-    daoXHandle: z.string(),
-    telegramHandle: z.string(),
-    telegramGroup: z.string(),
-    website: z.string().url().optional(),
+  poster: z.string().url(),
 
-    fundingStarts: dateSchema.optional().default(new Date()),
-    fundingEnds: dateSchema.optional(),
+  fundTicker: z.string().max(10).optional().nullable(),
+  userXHandle: z.string(),
+  daoXHandle: z.string().optional().nullable(),
+  telegramHandle: z.string(),
+  telegramGroup: z.string().optional().nullable(),
+  website: z.string().url().optional().nullable(),
 
-    tradingStartsAt: dateSchema.optional(),
-    tradingEndsAt: dateSchema.optional(),
+  fundingStarts: dateSchema,
+  tradingPeriod: z
+    .union([
+      z
+        .string()
+        .regex(/^\d+$/, "Must be a valid number")
+        .transform((val) => Number(val)),
+      z.number(),
+    ])
+    .optional()
+    .nullable()
+    .refine((val) => !val || [30, 90, 120, 150, 180, 270].includes(val), {
+      message: "Invalid trading period",
+    }),
 
-    createdAt: z.date().default(() => new Date()),
-  })
-  .transform((data) => ({
-    ...data,
-    ...getDefaultDates(data.fundingStarts),
-  }))
-  .refine((data) => data.fundingStarts < data.fundingEnds, {
-    message: "Funding end date must be after funding start date",
-    path: ["fundingEnds"],
-  })
-  .refine((data) => data.tradingStartsAt < data.tradingEndsAt, {
-    message: "Trading end date must be after trading start date",
-    path: ["tradingEndsAt"],
-  });
+  createdAt: z.date().default(() => new Date()),
+});
 
 export const DAODataSchema = daoSchema;
