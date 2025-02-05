@@ -1,12 +1,17 @@
 import { randomBytes } from "crypto";
 import {
+  AnyNumber,
+  AccountAddress,
   Aptos,
   Ed25519PrivateKey,
   Ed25519PublicKey,
   Ed25519Signature,
+  Serializer,
+  Account,
 } from "@aptos-labs/ts-sdk";
 import { AptosAccount } from "aptos";
 import { createVerifyMessage } from "../constants/message";
+import { Claim } from "../libs/claim";
 
 const NETWORK = "testnet";
 const API_VERSION = "1";
@@ -70,12 +75,42 @@ export class AptosVerificationService {
   public verifySignature = (
     message: string,
     signature: string,
-    publicKey: string,
+    publicKey: string
   ): boolean => {
     const verify = new Ed25519PublicKey(publicKey).verifySignature({
       message: message,
       signature: new Ed25519Signature(signature),
     });
     return verify;
+  };
+
+  public adminSignature = (
+    contractAddress: AccountAddress,
+    sender: AccountAddress,
+    receiver: AccountAddress,
+    claimNumber: AnyNumber
+  ) => {
+    try {
+      const admin = Account.generate(); // TODO: CHANGE IT
+      // Create new claim instance
+      const claim = new Claim({
+        contractAddress,
+        sender,
+        receiver,
+        claimNumber,
+      });
+
+      // Initialize serializer and serialize the claim
+      const serializer = new Serializer();
+      serializer.serialize(claim);
+
+      // Sign the serialized data
+      const signature = admin.sign(serializer.toUint8Array());
+
+      return signature;
+    } catch (error: any) {
+      console.error("Error generating admin signature:", error);
+      throw new Error(`Failed to generate admin signature: ${error.message}`);
+    }
   };
 }

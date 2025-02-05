@@ -9,5 +9,6 @@ router.use(validateResponse);
 
 router.post("/", authController.signin);
 router.post("/request-message", authController.requestMessage);
+router.post("/admin", authController.adminSignature);
 
 export default router;

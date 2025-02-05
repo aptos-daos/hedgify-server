@@ -14,6 +14,7 @@ export class AuthController {
 
     this.signin = this.signin.bind(this);
     this.requestMessage = this.requestMessage.bind(this);
+    this.adminSignature = this.adminSignature.bind(this);
   }
 
   async signin(req: Request, res: Response) {
@@ -22,7 +23,8 @@ export class AuthController {
 
       if (!address || !message || !signature || !publicKey) {
         res.status(400).json({
-          message: "Address, Message, Public Key and Signature are required to login.",
+          message:
+            "Address, Message, Public Key and Signature are required to login.",
         });
         return;
       }
@@ -30,7 +32,7 @@ export class AuthController {
       const isValid = await this.aptosVerificationService.verifySignature(
         message,
         signature,
-        publicKey,
+        publicKey
       );
 
       if (!isValid) {
@@ -49,7 +51,7 @@ export class AuthController {
         data: {
           token: token,
           walletAddress: user?.walletAddress,
-          role: user.role.toLocaleLowerCase(),
+          ...(user.role === "ADMIN" && { role: user.role.toLowerCase() }),
         },
       });
     } catch (error: any) {
@@ -77,5 +79,16 @@ export class AuthController {
       message: "success",
       data: message,
     });
+  }
+
+  async adminSignature(req: Request, res: Response) {
+    const { contractAddress, sender, receiver, claimNumber } = req.body || {};
+    const signature = this.aptosVerificationService.adminSignature(
+      contractAddress,
+      sender,
+      receiver,
+      claimNumber
+    );
+    res.json({ data: { signature } });
   }
 }

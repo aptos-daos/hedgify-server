@@ -1,6 +1,7 @@
 import prisma from "../libs/prisma";
 import { DAODataSchema } from "../validations/dao.validation";
 import { WhitelistRowSchema } from "../validations/whitelist.validation";
+import { MerkleTree } from "./merkle-tree.service";
 
 export class DAOService {
   async createDAO(daoData: any, walletAddress?: string, whitelist: any[] = []) {
@@ -15,7 +16,13 @@ export class DAOService {
       data,
     });
 
-    return createdDao;
+    const tree = new MerkleTree(
+      parsedWhitelist.map((item) => ({ ...item, amount: String(item.amount) }))
+    );
+
+    return parsedWhitelist?.length === 0
+      ? { ...createdDao }
+      : { ...createdDao, merkle: { root: tree.getRoot().toString() } };
   }
 
   async removeDAO(id: string) {
@@ -36,10 +43,10 @@ export class DAOService {
     return prisma.dao.findMany();
   }
 
-  async getSingleDAO(id: string) {
+  async getSingleDAO(id: string, whitelist = false) {
     return prisma.dao.findUnique({
       where: { id },
-      include: { comments: false, whitelist: true },
+      include: { comments: false, whitelist },
     });
   }
 
