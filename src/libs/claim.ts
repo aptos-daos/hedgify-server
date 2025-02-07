@@ -16,16 +16,15 @@ export class Claim extends Serializable {
   public readonly claimNumber: U64;
 
   constructor(args: {
-    contractAddress: AccountAddress;
-    sender: AccountAddress;
-    receiver: AccountAddress;
-    claimNumber: AnyNumber;
+    dao_address: AccountAddress;
+    joinee_address: AccountAddress;
+    expire_time_in_seconds: AnyNumber;
   }) {
     super();
-    this.contractAddress = args.contractAddress;
-    this.sender = args.sender;
-    this.receiver = args.receiver;
-    this.claimNumber = new U64(args.claimNumber);
+    this.contractAddress = args.dao_address;
+    this.sender = args.dao_address;
+    this.receiver = args.joinee_address;
+    this.claimNumber = new U64(args.expire_time_in_seconds);
   }
 
   serialize(serializer: Serializer): void {

@@ -88,6 +88,7 @@ export class DAOController {
       }
 
       if (address && amount) {
+        const limit = dao?.whitelist.find((item) => item.address === address)?.amount;
         const tree = new MerkleTree(
           dao?.whitelist.map((item) => ({
             ...item,
@@ -96,7 +97,7 @@ export class DAOController {
         );
         const proof = tree.getProof(address, amount);
         const root = tree.getRoot();
-        res.status(200).json({ data: { ...dao, merkle: { root, proof } } });
+        res.status(200).json({ data: { ...dao, merkle: { root, proof, limit } } });
         return;
       }
 

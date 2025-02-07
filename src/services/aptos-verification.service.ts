@@ -22,14 +22,14 @@ const generateNonce = (): string => randomBytes(16).toString("base64");
 
 export const aptos = new Aptos();
 
-const initializeAdminAccount = (): AptosAccount => {
+const initializeAdminAccount = (): Account => {
   const privateKeyStr = process.env.ADMIN_PRIVATE_KEY;
   if (!privateKeyStr) {
     throw new Error("Admin private key not found in environment variables");
   }
 
   const privateKey = new Ed25519PrivateKey(privateKeyStr);
-  return new AptosAccount(privateKey.toUint8Array());
+  return Account.fromPrivateKey({ privateKey });
 };
 
 export const ADMIN_ACCOUNT = initializeAdminAccount();
@@ -82,35 +82,5 @@ export class AptosVerificationService {
       signature: new Ed25519Signature(signature),
     });
     return verify;
-  };
-
-  public adminSignature = (
-    contractAddress: AccountAddress,
-    sender: AccountAddress,
-    receiver: AccountAddress,
-    claimNumber: AnyNumber
-  ) => {
-    try {
-      const admin = Account.generate(); // TODO: CHANGE IT
-      // Create new claim instance
-      const claim = new Claim({
-        contractAddress,
-        sender,
-        receiver,
-        claimNumber,
-      });
-
-      // Initialize serializer and serialize the claim
-      const serializer = new Serializer();
-      serializer.serialize(claim);
-
-      // Sign the serialized data
-      const signature = admin.sign(serializer.toUint8Array());
-
-      return signature;
-    } catch (error: any) {
-      console.error("Error generating admin signature:", error);
-      throw new Error(`Failed to generate admin signature: ${error.message}`);
-    }
   };
 }

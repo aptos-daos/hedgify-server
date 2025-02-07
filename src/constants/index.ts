@@ -1,0 +1,1 @@
+export const DEFAULT_SIGN_EXPIRATION_TIME = 60 * 60; // IN SECONDS
