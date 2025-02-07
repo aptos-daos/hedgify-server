@@ -18,7 +18,6 @@ export class DAOController {
     this.updateDAO = this.updateDAO.bind(this);
     this.getAllDAOs = this.getAllDAOs.bind(this);
     this.getSingleDAO = this.getSingleDAO.bind(this);
-    this.checkSlug = this.checkSlug.bind(this);
     this.addWhitelist = this.addWhitelist.bind(this);
     this.getMerkleTree = this.getMerkleTree.bind(this);
   }
@@ -102,18 +101,6 @@ export class DAOController {
       }
 
       res.status(200).json({ data: dao });
-    } catch (error) {
-      res.status(500).json({ error });
-    }
-  }
-
-  async checkSlug(req: Request, res: Response) {
-    try {
-      const dao = await this.daoService.checkSlug(req.params.id);
-      res.status(200).json({
-        data: { available: !dao },
-        message: dao ? "Slug is not available" : "Slug Available",
-      });
     } catch (error) {
       res.status(500).json({ error });
     }

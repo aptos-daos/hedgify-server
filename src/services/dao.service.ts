@@ -50,10 +50,6 @@ export class DAOService {
     });
   }
 
-  async checkSlug(slug: string) {
-    return prisma.dao.findUnique({ where: { slug } });
-  }
-
   async addWhitelist(
     id: string,
     addresses: Array<{

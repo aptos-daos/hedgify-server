@@ -33,7 +33,6 @@ const dateSchema = z
 
 const daoSchema = z.object({
   id: z.string().cuid().optional(),
-  slug: z.string().min(3).max(60, "Slug max word limit is 40"),
   walletAddress: z.string(),
   title: z.string().min(3).max(60, "Title max word limit is 60"),
   description: z
@@ -61,6 +60,8 @@ const daoSchema = z.object({
   telegramHandle: z.string(),
   telegramGroup: z.string().optional().nullable(),
   website: z.string().url().optional().nullable(),
+  isPublic: z.boolean().default(false),
+  publicLimit: z.number(),
 
   fundingStarts: dateSchema,
   tradingPeriod: z

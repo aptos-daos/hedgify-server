@@ -26,9 +26,6 @@ router.put("/:id", auth, daoController.updateDAO);
 // Get all DAOs
 router.get("/", daoController.getAllDAOs);
 
-// Get Slug Availablility
-router.get("/slug/:id", daoController.checkSlug);
-
 // Get Merkle Tree
 router.get("/merkle/:id", daoController.getMerkleTree);
 

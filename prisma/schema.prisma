@@ -9,7 +9,6 @@ datasource db {
 
 model Dao {
   id             String  @id @default(cuid())
-  slug           String  @unique
   walletAddress  String
   title          String  @db.VarChar(60)
   description    String  @db.VarChar(280)
@@ -22,6 +21,8 @@ model Dao {
   poster         String
   indexFund      Int // OPTIONS: 1000 5000 10K 50K 100K
   profits        Int // In Percentage: max 10
+  isPublic       Boolean @default(false) // If whitelist is blank then true, or false
+  publicLimit    Int // If user cant 
 
   treasuryAddress String? @unique
   daoCoinAddress  String? @unique
@@ -37,7 +38,7 @@ model Dao {
 
   founder User @relation(fields: [walletAddress], references: [walletAddress])
 
-  @@index([slug, walletAddress])
+  @@index([walletAddress])
 }
 
 model Like {
