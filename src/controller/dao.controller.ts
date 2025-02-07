@@ -4,7 +4,6 @@ import { InviteService } from "../services/invite.service";
 import prisma from "../libs/prisma";
 import { MerkleTree } from "../services/merkle-tree.service";
 
-
 export class DAOController {
   private readonly daoService: DAOService;
   private readonly inviteService: InviteService;
@@ -33,12 +32,12 @@ export class DAOController {
         res.status(400).json({ error: "Invalid invite code" });
         return;
       }
-      const newDAO = await this.daoService.createDAO(
+      const data = await this.daoService.createDAO(
         req.body,
         req.user?.walletAddress,
         req.body.whitelist || []
       );
-      res.status(201).json({ success: true, data: newDAO });
+      res.status(201).json({ success: true, data });
     } catch (error) {
       res.status(400).json({ error });
     }
@@ -80,11 +79,29 @@ export class DAOController {
   }
 
   async getSingleDAO(req: Request, res: Response) {
+    const { address, amount } = req.body ?? {};
     try {
-      const dao = await this.daoService.getSingleDAO(req.params.id);
-      dao
-        ? res.status(200).json({ data: dao })
-        : res.status(404).json({ error: "DAO not found" });
+      const dao = await this.daoService.getSingleDAO(req.params.id, !!address);
+      if (!dao) {
+        res.status(404).json({ error: "DAO not found" });
+        return;
+      }
+
+      if (address && amount) {
+        const limit = dao?.whitelist.find((item) => item.address === address)?.amount;
+        const tree = new MerkleTree(
+          dao?.whitelist.map((item) => ({
+            ...item,
+            amount: String(item.amount),
+          }))
+        );
+        const proof = tree.getProof(address, amount);
+        const root = tree.getRoot();
+        res.status(200).json({ data: { ...dao, merkle: { root, proof, limit } } });
+        return;
+      }
+
+      res.status(200).json({ data: dao });
     } catch (error) {
       res.status(500).json({ error });
     }
@@ -140,10 +157,6 @@ export class DAOController {
       res.status(400).json({ error: "No addresses found" });
       return;
     }
-    // const adds = addresses.map((address) => ({
-    //   address: address.walletId,
-    //   amount: address.maxAmount,
-    // }));
     const merkleTree = new MerkleTree(
       addresses.map((add) => ({ ...add, amount: add.amount.toString() }))
     );

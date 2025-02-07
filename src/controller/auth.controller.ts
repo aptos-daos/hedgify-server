@@ -1,6 +1,12 @@
 import { Request, Response } from "express";
 import { JwtService, AptosVerificationService } from "../services";
 import { UserService } from "../services/user.service";
+import { Serializer } from "@aptos-labs/ts-sdk";
+import { Claim } from "../libs/claim";
+import { ADMIN_ACCOUNT } from "../services/aptos-verification.service";
+import { deriveAptosAccountAddress } from "../libs/account";
+import { DEFAULT_SIGN_EXPIRATION_TIME } from "../constants";
+import { getSecondsTime } from "../utils/time";
 
 export class AuthController {
   private jwtService: JwtService;
@@ -14,6 +20,7 @@ export class AuthController {
 
     this.signin = this.signin.bind(this);
     this.requestMessage = this.requestMessage.bind(this);
+    this.adminSignature = this.adminSignature.bind(this);
   }
 
   async signin(req: Request, res: Response) {
@@ -22,7 +29,8 @@ export class AuthController {
 
       if (!address || !message || !signature || !publicKey) {
         res.status(400).json({
-          message: "Address, Message, Public Key and Signature are required to login.",
+          message:
+            "Address, Message, Public Key and Signature are required to login.",
         });
         return;
       }
@@ -30,7 +38,7 @@ export class AuthController {
       const isValid = await this.aptosVerificationService.verifySignature(
         message,
         signature,
-        publicKey,
+        publicKey
       );
 
       if (!isValid) {
@@ -49,7 +57,7 @@ export class AuthController {
         data: {
           token: token,
           walletAddress: user?.walletAddress,
-          role: user.role.toLocaleLowerCase(),
+          ...(user.role === "ADMIN" && { role: user.role.toLowerCase() }),
         },
       });
     } catch (error: any) {
@@ -77,5 +85,20 @@ export class AuthController {
       message: "success",
       data: message,
     });
+  }
+
+  async adminSignature(req: Request, res: Response) {
+    const { dao_address, joinee_address } = req.body || {};
+    const now = getSecondsTime();
+    const expire_time_in_seconds = now + DEFAULT_SIGN_EXPIRATION_TIME;
+    const claim = new Claim({
+      dao_address: deriveAptosAccountAddress(dao_address),
+      joinee_address: deriveAptosAccountAddress(joinee_address),
+      expire_time_in_seconds,
+    });
+    const serializer = new Serializer();
+    serializer.serialize(claim);
+    const signature = ADMIN_ACCOUNT.sign(serializer.toUint8Array()).toString();
+    res.json({ data: { signature, expire_time_in_seconds } });
   }
 }
