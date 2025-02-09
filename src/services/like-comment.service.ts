@@ -152,11 +152,21 @@ export class LikeService {
   }
 
   async likeComment(commentId: string, userId: string): Promise<void> {
+    // Get the comment to fetch the daoId
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { daoId: true }
+    });
+
+    if (!comment) {
+      throw new Error('Comment not found');
+    }
+
     const like: Like = {
       id: crypto.randomUUID(),
       commentId,
       userId,
-      daoId: '', // You'll need to get this from the comment
+      daoId: comment.daoId,
       createdAt: new Date()
     };
 

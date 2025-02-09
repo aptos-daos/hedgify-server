@@ -5,7 +5,7 @@ FROM node:22-slim AS base
 RUN apt update && apt upgrade openssl -y
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@latest
 
 # Set working directory
 WORKDIR /app

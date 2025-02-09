@@ -39,7 +39,8 @@ export class LikeQueueWorker {
               id: op.id!,
               commentId: op.commentId,
               userId: op.userId,
-              daoId: op.daoId!
+              daoId: op.daoId!,
+              createdAt: new Date()
             }
           });
         } else {
