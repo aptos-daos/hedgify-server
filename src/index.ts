@@ -13,13 +13,13 @@ import inviteRoute from "./routes/invite.route";
 const app: Express = express();
 const port = process.env.SERVER_PORT || 8080;
 
-const CLIENT_URL = process.env.CLIENT_URL || "*";
+const CLIENT_URL = "*";
 
 
 // Middlewares
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   })
 );

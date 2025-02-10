@@ -1,21 +1,5 @@
 import { z } from "zod";
-import { addDays } from "date-fns";
-
-const DEFAULT_FUNDING_TRADING_DURATION = 0; // 0 days
-const DEFAULT_FUNDING_DURATION = 7; // 7 days
-const DEFAULT_TRADING_DURATION = 90; // 90 days
-
-export const getDefaultDates = (fundingStartDate: Date = new Date()) => {
-  const tradingStart = addDays(
-    fundingStartDate,
-    DEFAULT_FUNDING_TRADING_DURATION + DEFAULT_FUNDING_DURATION
-  );
-  return {
-    fundingStarts: fundingStartDate,
-    tradingStartsAt: tradingStart,
-    tradingEndsAt: addDays(tradingStart, DEFAULT_TRADING_DURATION),
-  };
-};
+import { AVAILABLE_PERIOD_OF_TRADING } from "../constants";
 
 const dateSchema = z
   .union([
@@ -74,7 +58,7 @@ const daoSchema = z.object({
     ])
     .optional()
     .nullable()
-    .refine((val) => !val || [30, 90, 120, 150, 180, 270].includes(val), {
+    .refine((val) => !val || AVAILABLE_PERIOD_OF_TRADING.includes(val), {
       message: "Invalid trading period",
     }),
 
