@@ -28,6 +28,7 @@ model Dao {
   daoCoinAddress  String? @unique
 
   fundingStarts DateTime? // Funding ends in 7 days and after 10 days automatically starts trading
+  whitelistEnds DateTime?
 
   tradingPeriod Int? // TRADING PERIOD: 30d 90d 120d 150d 180d 270d; trading date can be change if funding is done
 

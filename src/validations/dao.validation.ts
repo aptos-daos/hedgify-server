@@ -48,6 +48,7 @@ const daoSchema = z.object({
   publicLimit: z.number(),
 
   fundingStarts: dateSchema,
+  whitelistEnds: dateSchema,
   tradingPeriod: z
     .union([
       z
