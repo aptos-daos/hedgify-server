@@ -1,21 +1,16 @@
 import { randomBytes } from "crypto";
 import {
-  AnyNumber,
-  AccountAddress,
   Aptos,
   Ed25519PrivateKey,
   Ed25519PublicKey,
   Ed25519Signature,
-  Serializer,
   Account,
 } from "@aptos-labs/ts-sdk";
-import { AptosAccount } from "aptos";
 import { createVerifyMessage } from "../constants/message";
-import { Claim } from "../libs/claim";
 
-const NETWORK = "testnet";
+const NETWORK = process.env.NETWORK || "testnet";
 const API_VERSION = "1";
-const URI = "https://arupbasak.xyz/";
+const URI = process.env.BASE_URL ?? "http://localhost:3000/";
 const RESOURCES = ["https://docs.moralis.io/"];
 
 const generateNonce = (): string => randomBytes(16).toString("base64");
