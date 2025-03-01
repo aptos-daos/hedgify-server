@@ -1,3 +1,4 @@
+import { daoQueue } from "../libs/bullmq";
 import prisma from "../libs/prisma";
 import { DAODataSchema } from "../validations/dao.validation";
 import { WhitelistRowSchema } from "../validations/whitelist.validation";
@@ -15,6 +16,12 @@ export class DAOService {
     const createdDao = await prisma.dao.create({
       data,
     });
+
+    await daoQueue.add(
+      "expire-dao",
+      { daoId: createdDao.id },
+      { delay: 15 * 60 * 1000 } // 15 minutes delay
+    );
 
     const tree = new MerkleTree(
       parsedWhitelist.map((item) => ({ ...item, amount: String(item.amount) }))
@@ -65,7 +72,7 @@ export class DAOService {
     if (!dao) throw new Error("DAO not found");
 
     // return prisma.whitelist.createMany({
-    //   data: addresses.map(adderss => ({
+    //   data: addresses.map(address => ({
     //     ...address,
     //     daoId: id,
     //   })),

@@ -16,7 +16,11 @@ export class LikeQueueWorker {
 
   async start(): Promise<void> {
     setInterval(async () => {
-      await this.processQueue();
+      try {
+        await this.processQueue();
+      } catch (error) {
+        console.error("Error processing like queue:", error);
+      }
     }, LikeQueueWorker.PROCESS_INTERVAL * 1000);
   }
 
