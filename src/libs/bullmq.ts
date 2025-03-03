@@ -9,14 +9,28 @@ new Worker(
   async (job) => {
     const { daoId } = job.data;
 
-    await prisma.dao.delete({
+    // First check if the DAO exists and has undefined treasury address
+    const dao = await prisma.dao.findFirst({
       where: {
         id: daoId,
-        treasuryAddress: undefined,
+        treasuryAddress: null,
       },
     });
 
-    console.log(`${daoId} REMOVED`);
+    if (!dao) {
+      console.log(
+        `${daoId} SKIPPED: DAO either doesn't exist or has a treasury address`
+      );
+      return;
+    }
+
+    await prisma.dao.delete({
+      where: {
+        id: daoId,
+      },
+    });
+
+    console.log(`${daoId} REMOVED: DAO with undefined treasury address`);
   },
   { connection }
 );

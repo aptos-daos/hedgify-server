@@ -68,8 +68,15 @@ export class DAOController {
     }
   }
 
-  async getAllDAOs(_: Request, res: Response) {
+  async getAllDAOs(req: Request, res: Response) {
+    const wallet = req.body.walletAddress;
     try {
+      if(wallet) {
+        const data = await this.daoService.getAllDAOsByWallet(wallet);
+        res.status(200).json({ data });
+        return;
+      }
+      
       const data = await this.daoService.getAllDAOs();
       res.status(200).json({ data });
     } catch (error) {

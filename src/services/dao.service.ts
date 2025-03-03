@@ -50,6 +50,12 @@ export class DAOService {
     return prisma.dao.findMany();
   }
 
+  async getAllDAOsByWallet(walletAddress: string) {
+    return prisma.dao.findMany({
+      where: { walletAddress },
+    });
+  }
+
   async getSingleDAO(id: string, whitelist = false) {
     return prisma.dao.findUnique({
       where: { id },
