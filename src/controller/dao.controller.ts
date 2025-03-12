@@ -69,14 +69,14 @@ export class DAOController {
   }
 
   async getAllDAOs(req: Request, res: Response) {
-    const wallet = req.body.walletAddress;
     try {
-      if(wallet) {
+      if (req.body && "wallet" in req.body) {
+        const wallet = req.body.wallet;
         const data = await this.daoService.getAllDAOsByWallet(wallet);
         res.status(200).json({ data });
         return;
       }
-      
+
       const data = await this.daoService.getAllDAOs();
       res.status(200).json({ data });
     } catch (error) {
@@ -94,7 +94,9 @@ export class DAOController {
       }
 
       if (address && amount) {
-        const limit = dao?.whitelist.find((item) => item.address === address)?.amount;
+        const limit = dao?.whitelist.find(
+          (item) => item.address === address
+        )?.amount;
         const tree = new MerkleTree(
           dao?.whitelist.map((item) => ({
             ...item,
@@ -103,7 +105,9 @@ export class DAOController {
         );
         const proof = tree.getProof(address, amount);
         const root = tree.getRoot();
-        res.status(200).json({ data: { ...dao, merkle: { root, proof, limit } } });
+        res
+          .status(200)
+          .json({ data: { ...dao, merkle: { root, proof, limit } } });
         return;
       }
 
